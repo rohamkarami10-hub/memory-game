@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>بازی حافظه</title>
+<style>
+:root{--bg:#f6f4ef;--fg:#1f2430;--card:#ffffff;--back:#4f6df5;--back2:#7a8cff;--ok:#2fa36b;--muted:#6b7280;--border:#e3e0d8;color-scheme:light;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#14161c;--fg:#eceef3;--card:#222633;--back:#5a76ff;--back2:#3d4fc4;--ok:#3ecf8e;--muted:#9aa1b2;--border:#2f3445;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14161c;--fg:#eceef3;--card:#222633;--back:#5a76ff;--back2:#3d4fc4;--ok:#3ecf8e;--muted:#9aa1b2;--border:#2f3445;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:Vazirmatn,Tahoma,system-ui,sans-serif;min-height:100vh;display:flex;justify-content:center}
+main{width:100%;max-width:440px;padding:20px 16px 32px;text-align:center}
+h1{font-size:1.6rem;margin:8px 0 4px}
+p.sub{margin:0 0 16px;color:var(--muted);font-size:.95rem}
+.stats{display:flex;justify-content:space-between;gap:8px;margin-bottom:16px}
+.stat{flex:1;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px}
+.stat b{display:block;font-size:1.3rem}
+.stat span{color:var(--muted);font-size:.8rem}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;direction:ltr}
+.card{aspect-ratio:1;perspective:600px;border:0;background:none;padding:0;cursor:pointer}
+.inner{position:relative;width:100%;height:100%;transition:transform .4s;transform-style:preserve-3d}
+.card.open .inner,.card.done .inner{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;border-radius:14px;display:flex;align-items:center;justify-content:center;backface-visibility:hidden;font-size:2rem}
+.front{background:linear-gradient(135deg,var(--back),var(--back2));color:#fff;font-size:1.4rem}
+.back{background:var(--card);border:2px solid var(--border);transform:rotateY(180deg)}
+.card.done .back{border-color:var(--ok)}
+.win{display:none;margin-top:18px;padding:14px;border-radius:12px;background:var(--card);border:2px solid var(--ok);font-weight:bold}
+.win.show{display:block}
+button.reset{margin-top:18px;padding:12px 28px;font:inherit;font-weight:bold;border:0;border-radius:12px;background:var(--back);color:#fff;cursor:pointer}
+</style>
+</head>
+<body>
+<main>
+<h1>🧠 بازی حافظه</h1>
+<p class="sub">کارت‌های هم‌شکل را پیدا کنید</p>
+<div class="stats">
+<div class="stat"><b id="moves">0</b><span>حرکت</span></div>
+<div class="stat"><b id="pairs">0 / 8</b><span>جفت‌ها</span></div>
+<div class="stat"><b id="time">0</b><span>ثانیه</span></div>
+</div>
+<div class="grid" id="grid"></div>
+<div class="win" id="win"></div>
+<button class="reset" id="reset">شروع دوباره</button>
+</main>
+<script>
+const EMOJIS=['🍎','🐱','🚀','🎸','🌵','🍕','⚽','🦋'];
+const grid=document.getElementById('grid');
+let first=null,lock=false,moves=0,pairs=0,seconds=0,timer=null;
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+function start(){
+  clearInterval(timer);
+  first=null;lock=false;moves=0;pairs=0;seconds=0;
+  document.getElementById('moves').textContent=0;
+  document.getElementById('pairs').textContent='0 / 8';
+  document.getElementById('time').textContent=0;
+  document.getElementById('win').classList.remove('show');
+  grid.innerHTML='';
+  shuffle([...EMOJIS,...EMOJIS]).forEach(e=>{
+    const c=document.createElement('button');
+    c.className='card';c.dataset.e=e;
+    c.innerHTML='<div class="inner"><div class="face front">؟</div><div class="face back">'+e+'</div></div>';
+    c.addEventListener('click',()=>flip(c));
+    grid.appendChild(c);
+  });
+}
+
+function flip(c){
+  if(lock||c.classList.contains('open')||c.classList.contains('done'))return;
+  if(!timer){timer=setInterval(()=>{seconds++;document.getElementById('time').textContent=seconds},1000)}
+  c.classList.add('open');
+  if(!first){first=c;return}
+  moves++;document.getElementById('moves').textContent=moves;
+  if(first.dataset.e===c.dataset.e){
+    first.classList.replace('open','done');c.classList.replace('open','done');
+    first=null;pairs++;
+    document.getElementById('pairs').textContent=pairs+' / 8';
+    if(pairs===8){
+      clearInterval(timer);
+      const w=document.getElementById('win');
+      w.textContent='🎉 آفرین! در '+moves+' حرکت و '+seconds+' ثانیه تمام کردید.';
+      w.classList.add('show');
+    }
+  }else{
+    lock=true;
+    const a=first;first=null;
+    setTimeout(()=>{a.classList.remove('open');c.classList.remove('open');lock=false},800);
+  }
+}
+
+document.getElementById('reset').addEventListener('click',start);
+start();
+</script>
+</body>
+</html>
